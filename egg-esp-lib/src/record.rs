@@ -1,4 +1,6 @@
-use nom::{CompareResult::Error, Err, IResult, Parser, bytes::complete::take, character::complete::alpha0, multi::{many, many0}, number::complete::le_u32};
+pub mod types;
+
+use nom::{IResult, Parser, bytes::complete::take, multi::many0, number::complete::le_u32};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct RecordType([u8; 4]);
@@ -6,6 +8,12 @@ pub struct RecordType([u8; 4]);
 impl From<[u8; 4]> for RecordType {
     fn from(bytes: [u8; 4]) -> Self {
         RecordType(bytes)
+    }
+}
+
+impl From<&[u8; 4]> for RecordType {
+    fn from(bytes: &[u8; 4]) -> Self {
+        RecordType(bytes.clone())
     }
 }
 
@@ -86,6 +94,8 @@ fn parse_record(input: &[u8]) -> IResult<&[u8], Record> {
 }
 
 pub fn parse_records(input: &[u8]) -> crate::error::Result<Vec<Record>> {
-    Ok(many0(parse_record).parse(input).map_err(|_| crate::error::Error::ParsingError)?.1)
+    Ok(many0(parse_record)
+        .parse(input)
+        .map_err(|_| crate::error::Error::ParsingError)?
+        .1)
 }
-
