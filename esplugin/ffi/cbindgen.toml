@@ -1,0 +1,6 @@
+language = "C"
+cpp_compat = true
+
+[parse]
+parse_deps = true
+include = ["esplugin"]

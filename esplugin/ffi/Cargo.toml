@@ -1,0 +1,20 @@
+[package]
+name = "esplugin-ffi"
+description = "A wrapper library providing a C FFI for esplugin."
+readme = "../README.md"
+version.workspace = true
+authors.workspace = true
+repository.workspace = true
+categories.workspace = true
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+esplugin = { path = ".." }
+
+[lib]
+crate-type = ["staticlib"]
+
+[lints]
+workspace = true
