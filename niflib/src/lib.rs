@@ -1,22 +1,13 @@
-use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
-
-use cxx::let_cxx_string;
-
-#[cxx::bridge]
 mod ffi {
-    unsafe extern "C++" {
-        include!("lib.h");
-
-        fn rust_GetNifTextureFilepaths(nifFilePath: &CxxString) -> UniquePtr<CxxVector<CxxString>>;
-        fn rust_test();
+    unsafe extern "C" {
+        pub fn rust_test();
     }
 }
 
 pub fn get_nif_texture_filepaths(nif_file_path: &str) -> Vec<String> {
-    let mut texture_filepaths = Vec::new();
+    let texture_filepaths = Vec::new();
 
-    let_cxx_string!(nif_file_path_cxx = nif_file_path);
+    //let_cxx_string!(nif_file_path_cxx = nif_file_path);
 
     // ffi::rust_GetNifTextureFilepaths(&nif_file_path_cxx).as_ref().map(|vec| {
     //     for i in 0..vec.len() {
@@ -26,8 +17,7 @@ pub fn get_nif_texture_filepaths(nif_file_path: &str) -> Vec<String> {
     //     }
     // });
 
-    ffi::rust_test();
-
+    unsafe { ffi::rust_test() };
 
     texture_filepaths
 }
