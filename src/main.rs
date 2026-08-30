@@ -1,9 +1,10 @@
 use std::path::Path;
 
 use clap::Parser;
-use esplugin::{GameId, ParseOptions, Plugin, plugin::RecordIds, plugins_metadata};
+use egg_esp_lib::record::{Record, RecordHeader, RecordType, SubRecord, parse_records};
+// use esplugin::{GameId, ParseOptions, Plugin, plugin::RecordIds, plugins_metadata};
 
-const GAME_ID: GameId = GameId::Morrowind;
+//const GAME_ID: GameId = GameId::Morrowind;
 
 #[derive(Parser, Debug)]
 #[command(version, about = "A simple CLI tool example", long_about = None)]
@@ -13,72 +14,44 @@ struct Args {
     file: String,
 }
 
-fn print_records(records: &RecordIds) {
-    match records {
-        RecordIds::None => println!("No records found."),
-        RecordIds::FormIds(ids) => {
-            println!("Found {} FormIDs:", ids.len());
-            for id in ids {
-                println!("  - {}", id);
-            }
-        }
+// fn print_records(records: &RecordIds) {
+//     match records {
+//         RecordIds::None => println!("No records found."),
+//         RecordIds::FormIds(ids) => {
+//             println!("Found {} FormIDs:", ids.len());
+//             for id in ids {
+//                 println!("  - {}", id);
+//             }
+//         }
 
-        RecordIds::NamespacedIds(ids) => {
-            println!("Found {} Namespaced IDs:", ids.len());
-            for id in ids {
-                println!("  - {:?}", id);
-            }
-        }
+//         RecordIds::NamespacedIds(ids) => {
+//             println!("Found {} Namespaced IDs:", ids.len());
+//             for id in ids {
+//                 println!("  - {:?}", id);
+//             }
+//         }
 
-        RecordIds::Resolved(ids) => {
-            println!("Found {} Resolved Record IDs:", ids.len());
-            for id in ids {
-                println!("  - {:?}", id);
-            }
-        }
-    }
-}
+//         RecordIds::Resolved(ids) => {
+//             println!("Found {} Resolved Record IDs:", ids.len());
+//             for id in ids {
+//                 println!("  - {:?}", id);
+//             }
+//         }
+//     }
+// }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let plugin_path = Path::new(&args.file).parent().unwrap();
-    let mut plugin = Plugin::new(GAME_ID, Path::new(&args.file));
+    //let plugin_path = Path::new(&args.file).parent().unwrap();
+    let plugin_data = std::fs::read(&args.file)?;
 
-    plugin.parse_file(ParseOptions::whole_plugin()).unwrap();
+    let records = parse_records(&plugin_data)?;
 
-    // Load each master plugin too
-    let plugins = plugin
-        .masters()?
-        .iter()
-        .map(|master| {
-            let master_path = plugin_path.join(Path::new(master));
-            Plugin::new(GAME_ID, &master_path)
-        })
-        .collect::<Vec<_>>();
-
-    // Convert plugins to &[&Plugin] for plugins_metadata
-    let plugins_ref = plugins.iter().collect::<Vec<_>>();
-
-    let metadata = plugins_metadata(&plugins_ref).unwrap();
-
-    println!("Before resolving");
-    print_records(&plugin.records());
-
-    plugin.resolve_record_ids(metadata.as_slice()).unwrap();
-
-    println!("After resolving");
-    print_records(&plugin.records());
-
-    //println!("Description: {:#?}", plugin.header());
-
-    for subrecord in plugin.header().subrecords() {
-        println!(
-            "Subrecord: \n\ttype={:?}, \n\tdata={:?}, \n\tdata_str={:?}",
-            subrecord.subrecord_type_str(),
-            subrecord.data(),
-            std::str::from_utf8(&subrecord.data()).unwrap_or("<invalid utf8>")
-        );
+    println!("Parsed {} records from the ESP file.", records.len());
+    for record in records {
+        println!("Record header: {:?}", record.header);
+        println!("Subrecord: {:?}", record.subrecords);
     }
 
     Ok(())
