@@ -72,7 +72,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          name: esp-isolator-${{ github.ref_name }}-${{ matrix.target }}
+          name: esp-isolator-${{ matrix.target }}-${{ github.sha }} #esp-isolator-${{ github.ref_name }}-${{ matrix.target }}
           path: ./artifacts
       - name: List
         run: find ./artifacts
