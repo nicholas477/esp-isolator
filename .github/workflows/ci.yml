@@ -54,7 +54,7 @@ jobs:
       - name: Archive artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-${{ matrix.target }}-${{ github.sha }}
+          name: esp-isolator-${{ matrix.target }}-${{ github.sha }}
           path: |
             ./artifacts
 
@@ -67,7 +67,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          name: artifact-${{ matrix.target }}-${{ github.sha }}
+          name: esp-isolator-${{ matrix.target }}-${{ github.sha }}
           path: ./artifacts
       - name: List
         run: find ./artifacts
