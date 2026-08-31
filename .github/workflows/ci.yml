@@ -34,7 +34,6 @@ jobs:
           submodules: recursive
       - name: Install rust target
         run: rustup target add $TARGET
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - run: cargo build --release --verbose --target $TARGET
       - name: List target
         run: find ./target
