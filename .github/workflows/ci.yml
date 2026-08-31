@@ -95,9 +95,12 @@ jobs:
           else
               EXEC=$NAME
           fi
-          mv ./target/$TARGET/release/$EXEC ./artifacts/$EXEC
+
+          # Move the executable to artifacts folder
           if [[ $BUILD_VARIANT == 'windows-msi' ]]; then
             cp ./target/wix/*.msi ./artifacts/
+          else
+            mv ./target/$TARGET/release/$EXEC ./artifacts/$EXEC
           fi
 
       - name: Archive artifact
