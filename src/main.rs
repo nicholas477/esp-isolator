@@ -19,12 +19,7 @@ struct Args {
     file: Option<PathBuf>,
 
     /// (Optional) Output file path. If not specified, the zip file will be created in the same directory as the input ESP file.
-    #[arg(
-        short,
-        long,
-        required_unless_present = "update",
-        conflicts_with = "update"
-    )]
+    #[arg(short, long, conflicts_with = "update")]
     output: Option<PathBuf>,
 
     /// Update the program to the latest version. If specified, the file and output arguments will be ignored.
@@ -33,16 +28,16 @@ struct Args {
 }
 
 fn add_file(files: &mut HashSet<String>, file_path: &str) -> bool {
-    if !file_path.is_empty() {
-        files.insert(file_path.to_string())
-    } else {
+    if file_path.is_empty() {
         false
+    } else {
+        files.insert(file_path.to_string())
     }
 }
 
 fn add_file_path(files: &mut HashSet<String>, file_path: &Path) -> bool {
     if !file_path.is_empty()
-        && let Some(path) = file_path.to_str().map(|s| s.to_string())
+        && let Some(path) = file_path.to_str().map(std::string::ToString::to_string)
     {
         return files.insert(path);
     }
