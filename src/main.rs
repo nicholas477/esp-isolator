@@ -27,10 +27,10 @@ fn add_file(files: &mut HashSet<String>, file_path: &str) -> bool {
 }
 
 fn add_file_path(files: &mut HashSet<String>, file_path: &Path) -> bool {
-    if !file_path.is_empty() {
-        if let Some(path) = file_path.to_str().map(|s| s.to_string()) {
-            return files.insert(path);
-        }
+    if !file_path.is_empty()
+        && let Some(path) = file_path.to_str().map(|s| s.to_string())
+    {
+        return files.insert(path);
     }
 
     false
@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut files = HashSet::new();
     add_file(
         &mut files,
-        &Path::new(&args.file).file_name().unwrap().to_str().unwrap(),
+        Path::new(&args.file).file_name().unwrap().to_str().unwrap(),
     );
 
     let plugin_path = args.file.parent().unwrap();
@@ -121,7 +121,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let External(file_name) = &object.source {
                 let tex_path = Path::new(file_name);
 
-                let tex_full_path = plugin_path.join(&tex_path);
+                let tex_full_path = plugin_path.join(tex_path);
                 if !tex_full_path.exists() {
                     eprintln!(
                         "Error: Nif file {} references nonexistent texture file: {}",
@@ -138,7 +138,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .into());
                 }
 
-                add_file_path(&mut files, &tex_path);
+                add_file_path(&mut files, tex_path);
             }
         }
     }
