@@ -7,3 +7,6 @@ edition = "2024"
 clap = { version = "4.6.6", features = ["derive"] }
 zip = "8.6.0"
 tes3 = { git = "https://github.com/Greatness7/tes3", features = ["esp", "nif"] }
+self_update = "1.2.0"
+log = "0.4.34"
+env_logger = "0.11.11"
