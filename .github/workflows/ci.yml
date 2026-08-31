@@ -81,7 +81,8 @@ jobs:
       - name: Compress
         run: |
           mkdir -p release
-          zip release/esp-isolator-${{ matrix.name }}-${{ github.ref_name }}.zip ./artifacts/*
+          cd artifacts
+          zip ../release/esp-isolator-${{ matrix.name }}-${{ github.ref_name }}.zip ./*
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
