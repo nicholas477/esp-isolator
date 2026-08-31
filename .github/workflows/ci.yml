@@ -30,11 +30,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
+
       - name: Install rust target
         run: rustup target add $TARGET
-      - run: cargo build --release --verbose --target $TARGET
+
+      - name: Enable caching
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --verbose --target $TARGET
+
       - name: List target
         run: find ./target
+
       - name: Compress
         run: |
           mkdir -p ./artifacts
@@ -51,6 +59,7 @@ jobs:
           fi
           mv ./target/$TARGET/release/$EXEC ./artifacts/$EXEC
           # tar -czf ./artifacts/$NAME-$TARGET-$TAG.tar.gz $EXEC
+
       - name: Archive artifact
         uses: actions/upload-artifact@v4
         with:
