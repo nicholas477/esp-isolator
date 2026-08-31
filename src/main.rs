@@ -1,8 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
-use egg_esp_lib::record::parse_records;
 use std::collections::hash_set::HashSet;
+use tes3::esp::{Plugin, Static};
+use tes3::nif::TextureSource::External;
+use tes3::nif::{NiSourceTexture, NiStream};
 use zip::{CompressionMethod, write::FileOptions};
 
 #[derive(Parser, Debug)]
@@ -24,37 +26,14 @@ fn add_file(files: &mut HashSet<String>, file_path: &str) -> bool {
     }
 }
 
-fn collect_files_from_record(
-    record: &egg_esp_lib::record::Record,
-    plugin_path: &Path,
-    files: &mut HashSet<String>,
-) {
-    if let Ok(stat) = egg_esp_lib::record::types::Static::try_from(record.clone()) {
-        println!("Found a Static record: {:?}", stat);
-
-        let nif_file = plugin_path.join(Path::new("meshes")).join(&stat.model.path);
-
-        add_file(
-            files,
-            Path::new("meshes").join(&stat.model.path).to_str().unwrap(),
-        );
-
-        niflib::get_nif_texture_filepaths(nif_file.to_str().unwrap())
-            .iter()
-            .for_each(|texture| {
-                add_file(files, texture);
-            });
+fn add_file_path(files: &mut HashSet<String>, file_path: &Path) -> bool {
+    if !file_path.is_empty() {
+        if let Some(path) = file_path.to_str().map(|s| s.to_string()) {
+            return files.insert(path);
+        }
     }
-}
 
-fn collect_files_from_records(
-    records: &[egg_esp_lib::record::Record],
-    plugin_path: &Path,
-    files: &mut HashSet<String>,
-) {
-    for record in records {
-        collect_files_from_record(record, plugin_path, files);
-    }
+    false
 }
 
 fn zip_files(
@@ -97,28 +76,72 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
+    if !args.file.exists() {
+        eprintln!(
+            "Error: The provided file does not exist: \"{}\"",
+            args.file.display()
+        );
+        std::process::exit(1);
+    }
+
+    // output path
     let zip_path = args
         .output
         .unwrap_or(Path::new(&args.file).with_extension("zip"));
 
-    let plugin_path = args.file.parent().unwrap();
-    let plugin_data = std::fs::read(&args.file)?;
-
-    let records = parse_records(&plugin_data)
-        .inspect_err(|e| eprintln!("Failed to parse records from file: {}", e))?;
-
     // Insert the ESP file itself into the set of files to be zipped
     let mut files = HashSet::new();
-    files.insert(
-        Path::new(&args.file)
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string(),
+    add_file(
+        &mut files,
+        &Path::new(&args.file).file_name().unwrap().to_str().unwrap(),
     );
 
-    collect_files_from_records(&records, plugin_path, &mut files);
+    let plugin_path = args.file.parent().unwrap();
+    let plugin = Plugin::from_path(&args.file)
+        .inspect_err(|e| eprintln!("Failed to load plugin {}! Error: {e}", args.file.display()))?;
+
+    // Collect all of the mesh references (and their textures) in the ESP file and add them to the set of files to be zipped
+    for object in plugin.objects_of_type::<Static>() {
+        let path = Path::new("meshes").join(&object.mesh);
+        add_file_path(&mut files, &path);
+
+        let full_path = plugin_path.join(&path);
+        if !full_path.exists() {
+            eprintln!(
+                "Error: ESP references nonexistent mesh file: {}",
+                path.display()
+            );
+            eprintln!("Looked for mesh at path: {}", full_path.display());
+            return Err(format!("ESP references nonexistent mesh file: {}", path.display()).into());
+        }
+
+        let mut stream = NiStream::new();
+        stream.load_path(&full_path)?;
+        for object in stream.objects_of_type::<NiSourceTexture>() {
+            if let External(file_name) = &object.source {
+                let tex_path = Path::new(file_name);
+
+                let tex_full_path = plugin_path.join(&tex_path);
+                if !tex_full_path.exists() {
+                    eprintln!(
+                        "Error: Nif file {} references nonexistent texture file: {}",
+                        path.display(),
+                        tex_path.display()
+                    );
+
+                    eprintln!("Looked for texture at path: {}", full_path.display());
+                    return Err(format!(
+                        "Nif file {} references nonexistent texture file: {}",
+                        path.display(),
+                        tex_path.display()
+                    )
+                    .into());
+                }
+
+                add_file_path(&mut files, &tex_path);
+            }
+        }
+    }
 
     {
         println!("-- Zipping {} files:", files.len());
@@ -137,6 +160,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Zip file created successfully at: \"{}\"",
         zip_path.display()
     );
+
+    // let mut _input = String::new();
+    // std::io::stdin().read_line(&mut _input).unwrap(); // Halts program until Enter is pressed
 
     Ok(())
 }
