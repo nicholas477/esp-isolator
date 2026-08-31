@@ -1,14 +1,9 @@
 [package]
 name = "esp-isolator"
-version = "0.1.0"
+version = "0.1.5"
 edition = "2024"
 
 [dependencies]
 clap = { version = "4.6.6", features = ["derive"] }
-egg-esp-lib = "0.1.0"
-niflib = "0.1.0"
 zip = "8.6.0"
-
-[patch.crates-io]
-egg-esp-lib = { path = "./egg-esp-lib" }
-niflib = { path = "./niflib" }
+tes3 = { git = "https://github.com/Greatness7/tes3", features = ["esp", "nif"] }
