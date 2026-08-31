@@ -67,7 +67,9 @@ jobs:
       matrix:
         include:
           - TARGET: x86_64-unknown-linux-gnu
+            NAME: linux
           - TARGET: x86_64-pc-windows-msvc
+            NAME: windows
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v8
@@ -76,7 +78,11 @@ jobs:
           path: ./artifacts
       - name: List
         run: find ./artifacts
+      - name: Compress
+        run: |
+          mkdir -p release
+          zip release/esp-isolator-${{ matrix.name }}-${{ github.ref_name }}.zip ./artifacts/*
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./artifacts/*
+          files: ./release/*.zip
