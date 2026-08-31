@@ -30,7 +30,7 @@ impl TryFrom<crate::record::SubRecord> for Name {
 
     fn try_from(subrecord: crate::record::SubRecord) -> Result<Self, Self::Error> {
         if subrecord.record_type == *Self::record_type() {
-            let name_str = trim_null_terminated_string(&subrecord.data)?; //String::from_utf8(subrecord.data).map_err(|_| ())?;
+            let name_str = trim_null_terminated_string(&subrecord.data)?;
             Ok(Name(name_str))
         } else {
             Err(())
