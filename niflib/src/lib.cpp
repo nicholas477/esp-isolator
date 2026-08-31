@@ -8,10 +8,10 @@
 
 using namespace Niflib;
 
-extern "C" void rust_test()
+void rust_test()
 {
-    try
-    {
+    // try
+    // {
         const std::string nifFilePath = "I:\\SteamLibrary\\steamapps\\common\\Morrowind\\Data Files\\meshes\\tr\\f\\tr_f_fresco_flower_01.nif"; // Replace with your NIF file path
 
         std::cout << "Reading NIF file: " << nifFilePath << std::endl;
@@ -56,72 +56,60 @@ extern "C" void rust_test()
                 std::cout << "\tExternal texture found: " << filepath << std::endl;
             }
         }
+    // }
+    // catch (const std::exception &e)
+    // {
+    //     std::cerr << "Error reading NIF file: " << e.what() << std::endl;
+    // }
+}
+
+std::unique_ptr<std::vector<std::string>> rust_GetNifTextureFilepaths(const std::string &nifFilePath)
+{
+    try
+    {
+        std::vector<std::string> textureFilepaths;
+
+        unsigned ver = GetNifVersion(nifFilePath);
+        if (IsSupportedVersion(ver) == false)
+        {
+            cout << "Unsupported niflib version: " << hex << ver
+                 << endl;
+            return nullptr;
+        }
+
+        Ref<NiObject> root = ReadNifTree(nifFilePath);
+
+        // 2. Cast to NiAVObject (the scene root)
+        NiAVObject *sceneRoot = dynamic_cast<NiAVObject *>(&(*root));
+
+        if (!sceneRoot)
+        {
+            return nullptr; // Empty if not a valid scene
+        }
+
+        // 3. Create a material/texture collection from the scene
+        MatTexCollection materials(sceneRoot);
+
+        // 4. Iterate through all textures and collect filepaths
+        unsigned int numTextures = materials.GetNumTextures();
+        for (unsigned int i = 0; i < numTextures; ++i)
+        {
+            TextureWrapper texture = materials.GetTexture(i);
+
+            const std::string filepath = texture.GetTextureFileName();
+
+            if (texture.IsTextureExternal() && !filepath.empty())
+            {
+                textureFilepaths.push_back(filepath);
+            }
+        }
+
+        return std::make_unique<std::vector<std::string>>(std::move(textureFilepaths));
     }
     catch (const std::exception &e)
     {
         std::cerr << "Error reading NIF file: " << e.what() << std::endl;
+        // Handle exceptions, possibly log the error
+        return nullptr; // Return empty if an error occurs
     }
 }
-
-// std::unique_ptr<std::vector<std::string>> rust_GetNifTextureFilepaths(const std::string &nifFilePath)
-// {
-//     try
-//     {
-//         std::cout << "Reading NIF file: " << nifFilePath << std::endl;
-
-//         std::vector<std::string> textureFilepaths;
-
-//         NifInfo info;
-
-//         // std::ifstream file(nifFilePath);
-//         // if (file.good())
-//         // {
-//         //     std::cout << "The file exists!\n";
-//         // }
-
-//         unsigned ver = GetNifVersion(nifFilePath);
-//         if (IsSupportedVersion(ver) == false)
-//         {
-//             cout << "Unsupported niflib version: " << hex << ver
-//                  << endl;
-//             return nullptr;
-//         }
-
-//         Ref<NiObject> root = ReadNifTree(nifFilePath, &info);
-
-//         // 2. Cast to NiAVObject (the scene root)
-//         NiAVObject *sceneRoot = dynamic_cast<NiAVObject *>(&(*root));
-
-//         if (!sceneRoot)
-//         {
-//             return nullptr; // Empty if not a valid scene
-//         }
-
-//         // 3. Create a material/texture collection from the scene
-//         MatTexCollection materials(sceneRoot);
-
-//         // 4. Iterate through all textures and collect filepaths
-//         unsigned int numTextures = materials.GetNumTextures();
-//         for (unsigned int i = 0; i < numTextures; ++i)
-//         {
-//             TextureWrapper texture = materials.GetTexture(i);
-
-//             // Get the texture filename
-//             std::string filepath = texture.GetTextureFileName();
-
-//             // Only add if it's an external texture and filepath is not empty
-//             if (texture.IsTextureExternal() && !filepath.empty())
-//             {
-//                 textureFilepaths.push_back(filepath);
-//             }
-//         }
-
-//         return std::make_unique<std::vector<std::string>>(std::move(textureFilepaths));
-//     }
-//     catch (const std::exception &e)
-//     {
-//         std::cerr << "Error reading NIF file: " << e.what() << std::endl;
-//         // Handle exceptions, possibly log the error
-//         return nullptr; // Return empty if an error occurs
-//     }
-// }

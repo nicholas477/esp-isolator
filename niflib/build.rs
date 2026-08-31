@@ -23,12 +23,20 @@ fn main() {
     println!("cargo:rustc-link-lib=static=niflib_static");
 
     // // Compile bridge.cpp using a C++ compiler
-    cc::Build::new()
-        .cpp(true) // Tell the compiler to treat this as C++
-        .define("NIFLIB_STATIC_LINK", None) // Define a macro for static linking
-        .file("src/lib.cpp") // Path to your C++ file
-        .include("niflib/include") // Include path for your C++ headers
-        .compile("niflib-cpp-bridge"); // Name of the output static library
+    // cc::Build::new()
+    //     .cpp(true) // Tell the compiler to treat this as C++
+    //     .define("NIFLIB_STATIC_LINK", None) // Define a macro for static linking
+    //     .file("src/lib.cpp") // Path to your C++ file
+    //     .include("niflib/include") // Include path for your C++ headers
+    //     .compile("niflib-cpp-bridge"); // Name of the output static library
+
+    cxx_build::bridge("src/lib.rs")  // returns a cc::Build
+        .file("src/lib.cpp")
+        .std("c++17")
+        .define("NIFLIB_STATIC_LINK", None)
+        .include("include")
+        .include("niflib/include")
+        .compile("niflib_cxxbridge");
 
     println!("cargo:rerun-if-changed=niflib/");
     println!("cargo:rerun-if-changed=src/");

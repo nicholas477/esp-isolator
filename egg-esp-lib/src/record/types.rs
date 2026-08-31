@@ -1,5 +1,3 @@
-use crate::record::RecordType;
-
 pub trait RecordNameTrait {
     fn record_type() -> &'static crate::record::RecordType;
 }
@@ -13,6 +11,14 @@ pub struct Name(String);
 
 static NAME_TYPE: crate::record::RecordType = crate::record::RecordType([b'N', b'A', b'M', b'E']);
 
+fn trim_null_terminated_string(data: &[u8]) -> Result<String, ()> {
+    if let Some(&0) = data.last() {
+        String::from_utf8(data[..data.len() - 1].to_vec()).map_err(|_| ())
+    } else {
+        Err(())
+    }
+}
+
 impl RecordNameTrait for Name {
     fn record_type() -> &'static crate::record::RecordType {
         &NAME_TYPE
@@ -24,7 +30,7 @@ impl TryFrom<crate::record::SubRecord> for Name {
 
     fn try_from(subrecord: crate::record::SubRecord) -> Result<Self, Self::Error> {
         if subrecord.record_type == *Self::record_type() {
-            let name_str = String::from_utf8(subrecord.data).map_err(|_| ())?;
+            let name_str = trim_null_terminated_string(&subrecord.data)?; //String::from_utf8(subrecord.data).map_err(|_| ())?;
             Ok(Name(name_str))
         } else {
             Err(())
@@ -52,7 +58,7 @@ impl TryFrom<crate::record::SubRecord> for Model {
 
     fn try_from(subrecord: crate::record::SubRecord) -> Result<Self, Self::Error> {
         if subrecord.record_type == *Self::record_type() {
-            let path_str = String::from_utf8(subrecord.data).map_err(|_| ())?;
+            let path_str = trim_null_terminated_string(&subrecord.data)?;
             Ok(Model { path: path_str })
         } else {
             Err(())
@@ -79,6 +85,7 @@ impl RecordNameTrait for Static {
 impl TryFrom<crate::record::Record> for Static {
     type Error = ();
 
+    // There's probably some way to make this a macro
     fn try_from(record: crate::record::Record) -> Result<Self, Self::Error> {
         if record.header.record_type == *Self::record_type() {
             let mut name_opt: Option<Name> = None;
