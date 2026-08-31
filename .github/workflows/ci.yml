@@ -72,11 +72,11 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          name: esp-isolator-${{ matrix.target }}-${{ github.sha }}
+          name: esp-isolator-${{ github.ref_name }}-${{ matrix.target }}
           path: ./artifacts
       - name: List
         run: find ./artifacts
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./artifacts/*.zip
+          files: ./artifacts/*
