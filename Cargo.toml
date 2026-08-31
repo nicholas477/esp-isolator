@@ -1,9 +1,15 @@
 [package]
 name = "esp-isolator"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2024"
+authors = ["Nicholas Chalkley"]
+license = "GPL-3.0"
+description = "Reads the statics from a ESP file and packages the ESP, meshes, and textures into a single zip."
 
 [dependencies]
 clap = { version = "4.6.6", features = ["derive"] }
 zip = "8.6.0"
 tes3 = { git = "https://github.com/Greatness7/tes3", features = ["esp", "nif"] }
+self_update = "1.2.0"
+log = "0.4.34"
+env_logger = "0.11.11"
