@@ -4,6 +4,7 @@ use std::path::PathBuf;
 fn main() {
     let mut config = Config::new("niflib");
 
+    config.define("CMAKE_CXX_STANDARD", "11");
     config.define("CMAKE_CXX_FLAGS_DEBUG", "/D_ITERATOR_DEBUG_LEVEL=0");
     config.define("CMAKE_MSVC_RUNTIME_LIBRARY", "MultiThreadedDLL");
     config.profile("Release");
@@ -30,7 +31,7 @@ fn main() {
     //     .include("niflib/include") // Include path for your C++ headers
     //     .compile("niflib-cpp-bridge"); // Name of the output static library
 
-    cxx_build::bridge("src/lib.rs")  // returns a cc::Build
+    cxx_build::bridge("src/lib.rs") // returns a cc::Build
         .file("src/lib.cpp")
         .std("c++17")
         .define("NIFLIB_STATIC_LINK", None)
