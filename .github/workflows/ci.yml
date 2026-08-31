@@ -12,7 +12,7 @@ defaults:
     shell: bash
 
 jobs:
-  build_and_test:
+  build:
     name: Rust project - latest
     runs-on: ${{ matrix.OS }}
     env:
