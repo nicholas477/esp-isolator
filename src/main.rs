@@ -24,9 +24,27 @@ struct Args {
     #[arg(short, long)]
     pause: bool,
 
-    /// Update the program to the latest version. If specified, all other arguments except --pause will be ignored, and the program will check for updates and apply them if available.
-    #[arg(short, long)]
+    /// Update the program to the latest version.
+    /// If specified, all other arguments except --pause will be ignored, and the program will check for updates and apply them if available.
+    #[arg(
+        short,
+        long,
+        help = "Update the program to the latest version.\
+        \nIf specified, all other arguments except --pause will be ignored, and the program will check for updates and apply them if available."
+    )]
     update: bool,
+
+    /// Include assets that are also referenced by master plugins.
+    /// If specified, the program will include assets that are referenced by master files into the zip file.
+    #[arg(
+        short,
+        long,
+        conflicts_with = "update",
+        help = "Include assets that are also referenced by master plugins.\
+        \nIf specified, the program will include assets that are referenced by master files into the zip file.\
+        \nBy default, assets that are referenced by master files will be excluded from the zip file."
+    )]
+    include_master_files: bool,
 }
 
 fn zip_files(
@@ -125,28 +143,31 @@ async fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             .to_string(),
     );
 
-    let master_plugin_files =
-        assets::collect_master_plugin_files(&plugin, &input_file, plugin_path).await?;
+    if !args.include_master_files {
+        // Lookup master plugin files and remove any assets that are also referenced by them.
+        let master_plugin_files =
+            assets::collect_master_plugin_files(&plugin, &input_file, plugin_path).await?;
 
-    {
-        info!(
-            "-- Excluding assets from {} master plugins:",
-            master_plugin_files.len()
-        );
-        let mut master_plugin_files = master_plugin_files.iter().collect::<Vec<_>>();
-        master_plugin_files.sort();
-        for master_plugin_file in master_plugin_files {
+        {
             info!(
-                "\t-- {}",
-                master_plugin_file
-                    .file_name()
-                    .unwrap_or(master_plugin_file.as_os_str())
-                    .to_string_lossy()
+                "-- Excluding assets from {} master plugins:",
+                master_plugin_files.len()
             );
+            let mut master_plugin_files = master_plugin_files.iter().collect::<Vec<_>>();
+            master_plugin_files.sort();
+            for master_plugin_file in master_plugin_files {
+                info!(
+                    "\t-- {}",
+                    master_plugin_file
+                        .file_name()
+                        .unwrap_or(master_plugin_file.as_os_str())
+                        .to_string_lossy()
+                );
+            }
         }
-    }
 
-    assets::remove_master_asset_files(&mut files, &master_plugin_files, plugin_path).await?;
+        assets::remove_master_asset_files(&mut files, &master_plugin_files, plugin_path).await?;
+    }
 
     {
         info!("-- Zipping {} files:", files.len());
