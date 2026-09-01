@@ -13,3 +13,4 @@ tes3 = { git = "https://github.com/Greatness7/tes3", features = ["esp", "nif"] }
 self_update = "1.2.0"
 log = "0.4.34"
 env_logger = "0.11.11"
+tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }

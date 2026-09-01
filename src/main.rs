@@ -3,11 +3,9 @@ use std::path::{Path, PathBuf};
 use ::log::{error, info};
 use clap::Parser;
 use std::collections::hash_set::HashSet;
-use tes3::esp::{Plugin, Static};
-use tes3::nif::TextureSource::External;
-use tes3::nif::{NiSourceTexture, NiStream};
 use zip::{CompressionMethod, write::FileOptions};
 
+mod assets;
 mod log;
 mod update;
 
@@ -25,24 +23,6 @@ struct Args {
     /// Update the program to the latest version. If specified, the file and output arguments will be ignored.
     #[arg(short, long)]
     update: bool,
-}
-
-fn add_file(files: &mut HashSet<String>, file_path: &str) -> bool {
-    if file_path.is_empty() {
-        false
-    } else {
-        files.insert(file_path.to_string())
-    }
-}
-
-fn add_file_path(files: &mut HashSet<String>, file_path: &Path) -> bool {
-    if !file_path.is_empty()
-        && let Some(path) = file_path.to_str().map(std::string::ToString::to_string)
-    {
-        return files.insert(path);
-    }
-
-    false
 }
 
 fn zip_files(
@@ -74,7 +54,8 @@ fn zip_files(
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::init_logger();
 
     let args = Args::parse();
@@ -108,63 +89,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .output
         .unwrap_or(Path::new(&input_file).with_extension("zip"));
 
-    // Insert the ESP file itself into the set of files to be zipped
-    let mut files = HashSet::new();
-    add_file(
-        &mut files,
-        Path::new(&input_file)
+    let plugin_path = input_file.parent().unwrap();
+    let plugin = assets::load_plugin(&input_file).await?;
+
+    // Collect all mesh references and their textures for the statics in the ESP file.
+    let mut files = assets::collect_asset_files(&plugin, &input_file, plugin_path, true).await?;
+    files.insert(
+        input_file
             .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap(),
+            .and_then(|file_name| file_name.to_str())
+            .ok_or("Input file name is not valid Unicode")?
+            .to_string(),
     );
 
-    let plugin_path = input_file.parent().unwrap();
-    let plugin = Plugin::from_path(&input_file)
-        .inspect_err(|e| error!("Failed to load plugin {}! Error: {e}", input_file.display()))?;
+    let master_plugin_files =
+        assets::collect_master_plugin_files(&plugin, &input_file, plugin_path).await?;
 
-    // Collect all of the mesh references (and their textures) in the ESP file and add them to the set of files to be zipped
-    for object in plugin.objects_of_type::<Static>() {
-        let path = Path::new("meshes").join(&object.mesh);
-        add_file_path(&mut files, &path);
-
-        let full_path = plugin_path.join(&path);
-        if !full_path.exists() {
-            error!(
-                "Error: ESP references nonexistent mesh file: {}",
-                path.display()
+    {
+        info!(
+            "-- Excluding assets from {} master plugins:",
+            master_plugin_files.len()
+        );
+        let mut master_plugin_files = master_plugin_files.iter().collect::<Vec<_>>();
+        master_plugin_files.sort();
+        for master_plugin_file in master_plugin_files {
+            info!(
+                "\t-- {}",
+                master_plugin_file
+                    .file_name()
+                    .unwrap_or(master_plugin_file.as_os_str())
+                    .to_string_lossy()
             );
-            error!("Looked for mesh at path: {}", full_path.display());
-            return Err(format!("ESP references nonexistent mesh file: {}", path.display()).into());
-        }
-
-        let mut stream = NiStream::new();
-        stream.load_path(&full_path)?;
-        for object in stream.objects_of_type::<NiSourceTexture>() {
-            if let External(file_name) = &object.source {
-                let tex_path = Path::new(file_name);
-
-                let tex_full_path = plugin_path.join(tex_path);
-                if !tex_full_path.exists() {
-                    error!(
-                        "Error: Nif file {} references nonexistent texture file: {}",
-                        path.display(),
-                        tex_path.display()
-                    );
-
-                    error!("Looked for texture at path: {}", full_path.display());
-                    return Err(format!(
-                        "Nif file {} references nonexistent texture file: {}",
-                        path.display(),
-                        tex_path.display()
-                    )
-                    .into());
-                }
-
-                add_file_path(&mut files, tex_path);
-            }
         }
     }
+
+    assets::remove_master_asset_files(&mut files, &master_plugin_files, plugin_path).await?;
 
     {
         info!("-- Zipping {} files:", files.len());
