@@ -90,7 +90,8 @@ async fn main() {
     };
 
     if args.pause {
-        println!("Press Enter to close...");
+        eprint!("Press Enter to close...");
+        let _ = std::io::Write::flush(&mut std::io::stderr());
         let mut input = String::new();
         let _ = std::io::stdin().read_line(&mut input);
     }
