@@ -9,7 +9,7 @@ mod assets;
 mod log;
 mod update;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about = "Grabs the statics from an ESP file, then packages the meshes, textures, and the ESP file into a single zip.", long_about = None)]
 struct Args {
     /// ESP file to isolate meshes and textures from
@@ -19,6 +19,10 @@ struct Args {
     /// (Optional) Output file path. If not specified, the zip file will be created in the same directory as the input ESP file.
     #[arg(short, long, conflicts_with = "update")]
     output: Option<PathBuf>,
+
+    /// Pause before exiting. If specified, the program will wait for user input before exiting.
+    #[arg(short, long)]
+    pause: bool,
 
     /// Update the program to the latest version. If specified, the file and output arguments will be ignored.
     #[arg(short, long)]
@@ -55,33 +59,52 @@ fn zip_files(
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     log::init_logger();
-
     let args = Args::parse();
+
+    let exit_code = match run(args.clone()).await {
+        Ok(()) => 0,
+        Err(error) => {
+            error!("{error}");
+            1
+        }
+    };
+
+    if args.pause {
+        println!("Press Enter to close...");
+        let mut input = String::new();
+        let _ = std::io::stdin().read_line(&mut input);
+    }
+
+    std::process::exit(exit_code);
+}
+
+async fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     if args.update {
         info!("Checking for updates...");
         update::update()?;
         return Ok(());
     }
 
-    // This should be fine since the file argument is required unless update is specified, and we already checked for update above
-    let input_file = args.file.unwrap();
+    let input_file = args
+        .file
+        .ok_or("An input ESP file is required unless updating")?;
 
     if !input_file.is_file() {
-        error!(
-            "Error: The provided path is not a file: \"{}\"",
+        return Err(format!(
+            "The provided path is not a file: \"{}\"",
             input_file.display()
-        );
-        std::process::exit(1);
+        )
+        .into());
     }
 
     if !input_file.exists() {
-        error!(
-            "Error: The provided file does not exist: \"{}\"",
+        return Err(format!(
+            "The provided file does not exist: \"{}\"",
             input_file.display()
-        );
-        std::process::exit(1);
+        )
+        .into());
     }
 
     // output path

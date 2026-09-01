@@ -132,7 +132,7 @@
                           <RegistryValue
                             Root='HKCR'
                             Key='SystemFileAssociations\.esp\shell\EspIsolator\command'
-                            Value='&quot;[Bin]esp-isolator.exe&quot; &quot;%1&quot;'
+                            Value='&quot;[Bin]esp-isolator.exe&quot; &quot;%1&quot; --pause'
                             Type='string'/>
                           <RegistryValue
                             Root='HKCR'
@@ -142,7 +142,7 @@
                           <RegistryValue
                             Root='HKCR'
                             Key='SystemFileAssociations\.esm\shell\EspIsolator\command'
-                            Value='&quot;[Bin]esp-isolator.exe&quot; &quot;%1&quot;'
+                            Value='&quot;[Bin]esp-isolator.exe&quot; &quot;%1&quot; --pause'
                             Type='string'/>
                         </Component>
                     </Directory>

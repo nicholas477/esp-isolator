@@ -4,7 +4,6 @@ Reads the statics from a ESP file and packages the ESP, meshes, and textures int
 
 ![demonstration](assets/demonstration.gif)
 
-
 # Installation
 
 On Windows, download and install the msi file from the [releases](https://github.com/nicholas477/esp-isolator/releases) page.
@@ -17,14 +16,20 @@ There's also a command line interface:
 
 # Command line options
 
-```
-Usage: esp-isolator.exe [OPTIONS] <FILE>
+<!-- BEGIN GENERATED HELP -->
+```text
+Grabs the statics from an ESP file, then packages the meshes, textures, and the ESP file into a single zip.
+
+Usage: esp-isolator.exe [OPTIONS] [FILE]
 
 Arguments:
-  <FILE>  ESP file to isolate meshes and textures from
+  [FILE]  ESP file to isolate meshes and textures from
 
 Options:
   -o, --output <OUTPUT>  (Optional) Output file path. If not specified, the zip file will be created in the same directory as the input ESP file
+  -p, --pause            Pause before exiting. If specified, the program will wait for user input before exiting
+  -u, --update           Update the program to the latest version. If specified, the file and output arguments will be ignored
   -h, --help             Print help
   -V, --version          Print version
 ```
+<!-- END GENERATED HELP -->
