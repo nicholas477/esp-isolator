@@ -24,7 +24,7 @@ struct Args {
     #[arg(short, long)]
     pause: bool,
 
-    /// Update the program to the latest version. If specified, the file and output arguments will be ignored.
+    /// Update the program to the latest version. If specified, all other arguments except --pause will be ignored, and the program will check for updates and apply them if available.
     #[arg(short, long)]
     update: bool,
 }

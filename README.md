@@ -28,7 +28,7 @@ Arguments:
 Options:
   -o, --output <OUTPUT>  (Optional) Output file path. If not specified, the zip file will be created in the same directory as the input ESP file
   -p, --pause            Pause before exiting. If specified, the program will wait for user input before exiting
-  -u, --update           Update the program to the latest version. If specified, the file and output arguments will be ignored
+  -u, --update           Update the program to the latest version. If specified, all other arguments except --pause will be ignored, and the program will check for updates and apply them if available
   -h, --help             Print help
   -V, --version          Print version
 ```
